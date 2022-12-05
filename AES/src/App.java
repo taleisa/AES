@@ -26,11 +26,14 @@ public class App {
         Scanner input = new Scanner(System.in);
         System.out.println("Type text in hex");
         String text = input.nextLine();
+        System.out.println("Type key in hex");
+        String key = input.nextLine();
 
-        System.out.println(subBytes(text));
+        //System.out.println(subBytes(text));
+        System.out.println(addRoundKey(text,key));
     }
 
-    public static String subBytes(String text){
+    private static String subBytes(String text){
         char[] stateMatrix = text.toCharArray(); //Converting string to char array to easily manipulate.
         String newStateMatrix[] = {
                 sBox[hexToDec(stateMatrix[0])][hexToDec(stateMatrix[1])],sBox[hexToDec(stateMatrix[2])][hexToDec(stateMatrix[3])],sBox[hexToDec(stateMatrix[4])][hexToDec(stateMatrix[5])],sBox[hexToDec(stateMatrix[6])][hexToDec(stateMatrix[7])],
@@ -41,7 +44,7 @@ public class App {
         return res;
     }
 
-    public static int hexToDec(char fourBits){ //converting hex to decimal to have rows and cols to obtain value from s-box
+    private static int hexToDec(char fourBits){ //converting hex to decimal to have rows and cols to obtain value from s-box
         if (fourBits == 'a' || fourBits == 'b' || fourBits == 'c' || fourBits == 'd' || fourBits == 'e' || fourBits == 'f'){
             switch (fourBits) { //converting hex to dec to use it in rows and cols
                 case 'a':
@@ -75,5 +78,39 @@ public class App {
             newString = newString.concat(bit + "");
         }
         return newString;
+    }
+
+    private static String addRoundKey(String text, String key){
+        char[] textArr = text.toCharArray();
+        char[] keyArr = key.toCharArray();
+        String temp;
+        StringBuffer output = new StringBuffer(110);
+        for (int i=0; i<text.length(); i++){
+            temp = binaryToHex(xor(hexToBinary(textArr[i]),hexToBinary(keyArr[i]))); //converting text and key to binary then XORing them, then converting the result back to hexa.
+            output.append(temp);
+        }
+        return output.toString();
+    }
+
+    private static String xor(String x, String y) {
+        String result = "";
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < x.length(); i++) {
+            sb.append(x.charAt(i) ^ y.charAt(i));
+        }
+        result = sb.toString();
+        return result;
+    }
+
+    private static String hexToBinary(char hex){
+        int temp = Integer.parseInt(hex+"", 16); // radix 16 for hex
+        String binary = String.format("%4s", Integer.toBinaryString(temp)).replace(" ", "0"); //padding zeros to the left to make sure it is 4-bit
+        return binary;
+    }
+
+    private static String binaryToHex(String binary){
+        int temp = Integer.parseInt(binary, 2); // radix 2 for binary
+        String hexa = Integer.toHexString(temp);
+        return hexa;
     }
 }

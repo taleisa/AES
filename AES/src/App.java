@@ -30,7 +30,8 @@ public class App {
         String key = input.nextLine();
 
         //System.out.println(subBytes(text));
-        System.out.println(addRoundKey(text,key));
+        //System.out.println(addRoundKey(text,key));
+        System.out.println(shiftRow(text));
     }
 
     private static String subBytes(String text){
@@ -112,5 +113,18 @@ public class App {
         int temp = Integer.parseInt(binary, 2); // radix 2 for binary
         String hexa = Integer.toHexString(temp);
         return hexa;
+    }
+
+    private static String shiftRow(String text){
+        char[] stateMatrix = text.toCharArray(); //Converting string to char array to easily manipulate.
+        String newStateMatrix[] = {
+                stateMatrix[0]+"",stateMatrix[1]+"",stateMatrix[2]+"",stateMatrix[3]+"",stateMatrix[4]+"",stateMatrix[5]+"",stateMatrix[6]+"",stateMatrix[7]+"",
+                stateMatrix[10]+"",stateMatrix[11]+"",stateMatrix[12]+"",stateMatrix[13]+"",stateMatrix[14]+"",stateMatrix[15]+"",stateMatrix[8]+"",stateMatrix[9]+"",
+                stateMatrix[20]+"",stateMatrix[21]+"",stateMatrix[22]+"",stateMatrix[23]+"",stateMatrix[16]+"",stateMatrix[17]+"",stateMatrix[18]+"",stateMatrix[19]+"",
+                stateMatrix[30]+"",stateMatrix[31]+"",stateMatrix[24]+"",stateMatrix[25]+"",stateMatrix[26]+"",stateMatrix[27]+"",stateMatrix[28]+"",stateMatrix[29]+""
+        };
+
+        String res = String.join("", newStateMatrix);
+        return res;
     }
 }

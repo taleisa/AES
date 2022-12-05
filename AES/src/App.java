@@ -64,7 +64,16 @@ public class App {
         return rotatedWord;
     }
     private static String substituteWord(String word){
-        
+        String substitutedWord = "";
+        for(int i=0;i<4;i++){
+            String strRow = word.substring(i*8,i*8+4);//4 bits , 1 hexa character or 1 nibble that represent the row as a string(in binary)
+            int row = Integer.parseInt(strRow,2);//Integer representation of strRow
+            String strColumn = word.substring(i*8+4,(i*8)+8);//4 bits , 1 hexa character or 1 nibble that represent the column as a string(in binary)
+            int column = Integer.parseInt(strColumn,2);//Integer representation of strColumn
+            String resultFromSbox = Integer.toBinaryString(box[row][column]);//Parsing result from s box to bit string
+            substitutedWord = substitutedWord.concat(resultFromSbox);
+        }
+        return substitutedWord;
 
     }
 }

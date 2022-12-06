@@ -5,6 +5,7 @@ import java.util.Scanner;
 
 public class App {
     static HashMap<Integer,String> roundConstants = new HashMap<>();//Round constants to be used in key expansion
+    static String[] roundkeys = new String[11];
     static int[][] box = {
         {0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76},
         {0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0},
@@ -41,8 +42,9 @@ public class App {
             System.out.println("Key not 128 bits long, please retype key");
             key = input.nextLine();
         }
+        roundkeys[0] = key;//Key is first round key
         String [] words = keyToWords(key);// Dividing key into 4 byte words
-        for(int i=4;i<43;i++){// Start from 4 because we already have 4 words 0,1,2,3
+        for(int i=4;i<44;i++){// Start from 4 because we already have 4 words 0,1,2,3
             String temp = words[i-1];
             System.out.println(temp+" "+i);
             if(i%4==0){
@@ -65,14 +67,18 @@ public class App {
             temp = temp.replace("{", "");
             temp = temp.replace("}", "");
             System.out.println("Saving "+ temp);
+            System.out.println("----------------------------------------------"+i/4);
             words[i] = temp;
+            if(roundkeys[i/4]==null)roundkeys[i/4]="";
+            roundkeys[i/4] = roundkeys[i/4].concat(temp);
 
         }
-        // for(int i=0;i<words.length;i++){
-        //     int decimal = Integer.parseInt(words[i],2);
-        //     String hexStr = Integer.toString(decimal,16);
-        //     System.out.println(hexStr);
-        // }
+        for(int i=0;i<roundkeys.length;i++){
+            System.out.println("Key "+i+" "+roundkeys[i]);
+        }
+        
+
+
 
     }
 
@@ -83,7 +89,7 @@ public class App {
 
     //Method that will divide 128 bit key into 4 32 bit words
     private static String[] keyToWords(String key){
-        String[] words = new String[43];
+        String[] words = new String[44];
         words[0] = "";
         words[1] = "";
         words[2] = "";

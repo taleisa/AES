@@ -29,9 +29,9 @@ public class App {
         roundConstants.put(8, "00000010000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         roundConstants.put(12, "00000100000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         roundConstants.put(16, "00001000000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
-        roundConstants.put(20, "00001010000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
-        roundConstants.put(24, "00010100000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
-        roundConstants.put(28, "00100110000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
+        roundConstants.put(20, "00010000000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
+        roundConstants.put(24, "00100000000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
+        roundConstants.put(28, "01000000000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         roundConstants.put(32, "10000000000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         roundConstants.put(36, "00011011000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         roundConstants.put(40, "00110110000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
@@ -46,7 +46,7 @@ public class App {
         String [] words = keyToWords(key);// Dividing key into 4 byte words
         for(int i=4;i<44;i++){// Start from 4 because we already have 4 words 0,1,2,3
             String temp = words[i-1];
-            System.out.println(temp+" "+i);
+            System.out.println("Temp "+temp+" "+i);
             if(i%4==0){
                 temp = rotateWord(temp);
                 temp = substituteWord(temp);
@@ -56,12 +56,10 @@ public class App {
                 //Removing characters at beggining and end of string that will cause problems
                 temp = temp.replace("{", "");
                 temp = temp.replace("}", "");
+
             }
             BitSet result = toBitSet(temp);
-            System.out.println("After to Bitset method"+result);
-            System.out.println("Temp that was sent to bitset method"+temp);
             result.xor(toBitSet(words[i-4]));
-            System.out.println("Result after xor with rcon"+result);
             temp = fromBitSetToString(result);//Method to change bit string to bit set for ease of xor operation
             //Removing characters at beggining and end of string that will cause problems
             temp = temp.replace("{", "");

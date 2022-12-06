@@ -1,6 +1,10 @@
+import java.net.SocketTimeoutException;
+import java.util.BitSet;
+import java.util.HashMap;
 import java.util.Scanner;
 
 public class App {
+    static HashMap<Integer,String> roundConstants = new HashMap<>();//Round constants to be used in key expansion
     static int[][] box = {
         {0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76},
         {0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0},
@@ -20,6 +24,16 @@ public class App {
         {0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16}
     };
     public static void main(String[] args) {
+        roundConstants.put(4, "00000001000000000000000000000000");//Round constant to be used at iteration 4 in key expansion
+        roundConstants.put(8, "00000010000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
+        roundConstants.put(12, "00000100000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
+        roundConstants.put(16, "00001000000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
+        roundConstants.put(20, "00001010000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
+        roundConstants.put(24, "00010100000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
+        roundConstants.put(28, "00100110000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
+        roundConstants.put(32, "10000000000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
+        roundConstants.put(36, "00011011000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
+        roundConstants.put(40, "00110110000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         Scanner input = new Scanner(System.in);
         System.out.println("Type key in binary");
         String key  = input.nextLine();
@@ -28,52 +42,102 @@ public class App {
             key = input.nextLine();
         }
         String [] words = keyToWords(key);// Dividing key into 4 byte words
-        for(int i=4;i<words.length;i++){// Start from 4 because we already have 4 words 0,1,2,3
+        for(int i=4;i<43;i++){// Start from 4 because we already have 4 words 0,1,2,3
             String temp = words[i-1];
+            System.out.println(temp+" "+i);
             if(i%4==0){
                 temp = rotateWord(temp);
                 temp = substituteWord(temp);
-
+                BitSet result = toBitSet(temp);
+                result.xor(toBitSet(roundConstants.get(i)));
+                temp = fromBitSetToString(result);//Using the toBitSet method to make xor easier then converting back to string
+                //Removing characters at beggining and end of string that will cause problems
+                temp = temp.replace("{", "");
+                temp = temp.replace("}", "");
             }
-
+            BitSet result = toBitSet(temp);
+            System.out.println("After to Bitset method"+result);
+            System.out.println("Temp that was sent to bitset method"+temp);
+            result.xor(toBitSet(words[i-4]));
+            System.out.println("Result after xor with rcon"+result);
+            temp = fromBitSetToString(result);//Method to change bit string to bit set for ease of xor operation
+            //Removing characters at beggining and end of string that will cause problems
+            temp = temp.replace("{", "");
+            temp = temp.replace("}", "");
+            System.out.println("Saving "+ temp);
+            words[i] = temp;
 
         }
+        // for(int i=0;i<words.length;i++){
+        //     int decimal = Integer.parseInt(words[i],2);
+        //     String hexStr = Integer.toString(decimal,16);
+        //     System.out.println(hexStr);
+        // }
 
     }
+
+
+
+
+
+
     //Method that will divide 128 bit key into 4 32 bit words
     private static String[] keyToWords(String key){
-        String[] words = String[11];
+        String[] words = new String[43];
+        words[0] = "";
+        words[1] = "";
+        words[2] = "";
+        words[3] = "";
         for(int i=0;i<key.length();i++){
-            if(i<32)words[0]=words[0].concat(key.charAt(i));//The first 32 bits
-            else if(i<64)words[1]=words[1].concat(key.charAt(i));//Bits 32 to 63
-            else if(i<96)words[2]=words[2].concat(key.charAt(i));//Bits 64 to 95
-            else if(i<128)words[3]=words[3].concat(key.charAt(i));//Bits 96 to 127
+            if(i<32)words[0]=words[0].concat(key.charAt(i)+"");//The first 32 bits
+            else if(i<64)words[1]=words[1].concat(key.charAt(i)+"");//Bits 32 to 63
+            else if(i<96)words[2]=words[2].concat(key.charAt(i)+"");//Bits 64 to 95
+            else if(i<128)words[3]=words[3].concat(key.charAt(i)+"");//Bits 96 to 127
         }
         return words;
 
     }
     private static String rotateWord(String word){
-        String rotatedWord;
-        for(int i=7;i<word.length();i++){// Start with 8th character in original word(index 7)
-            rotatedWord = rotatedWord.concat(word.charAt(i));
-            if(i==word.length()-1){
-                for(int j=0;j<8;j++)
-                    rotatedWord.concat(word.charAt(j));//Last iteration append first 8 characters
-            }
+        String rotatedWord = "";
+        for(int i=8;i<word.length();i++){// Start with 9th character in original word(index 8)
+            rotatedWord = rotatedWord.concat(word.charAt(i)+"");
+        }
+        for(int j=0;j<8;j++){
+            rotatedWord = rotatedWord.concat(word.charAt(j)+"");//Last iteration append first 8 characters
         }
         return rotatedWord;
     }
     private static String substituteWord(String word){
         String substitutedWord = "";
+        //System.out.println(word);
         for(int i=0;i<4;i++){
             String strRow = word.substring(i*8,i*8+4);//4 bits , 1 hexa character or 1 nibble that represent the row as a string(in binary)
             int row = Integer.parseInt(strRow,2);//Integer representation of strRow
             String strColumn = word.substring(i*8+4,(i*8)+8);//4 bits , 1 hexa character or 1 nibble that represent the column as a string(in binary)
             int column = Integer.parseInt(strColumn,2);//Integer representation of strColumn
             String resultFromSbox = Integer.toBinaryString(box[row][column]);//Parsing result from s box to bit string
+            resultFromSbox = String.format("%8s", resultFromSbox).replace(' ', '0');//To add leading zeros to make it  8 bits
             substitutedWord = substitutedWord.concat(resultFromSbox);
         }
         return substitutedWord;
+
+    }
+    //Method to change bit string to bit set
+    private static BitSet toBitSet(String bitString){
+        BitSet bitSet = new BitSet(bitString.length());//Bitset with same length as bit string. Default value is 0 for all bits
+        for(int i=0;i<bitString.length();i++){
+            if(bitString.charAt(i)=='1')//If charat(i) in bitstring = 1 set ith bit in bit set
+                bitSet.set(i);
+        }
+        return bitSet;
+    }
+    private static String fromBitSetToString(BitSet bitset){
+        String bitString = "";
+        for(int i=0;i<32;i++){
+            if(bitset.get(i))bitString = bitString.concat("1");
+            else bitString = bitString.concat("0");
+        }
+        return bitString;
 
     }
 }

@@ -1,4 +1,5 @@
 import java.util.Scanner;
+import java.math.BigInteger;
 import java.net.SocketTimeoutException;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -46,13 +47,6 @@ public class App {
         {0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf},
         {0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16}
     };
-    static int[][] mixColumnsFixedMatrix = {
-        {0x02,0x03,0x01,0x01},
-        {0x01,0x02,0x03,0x01},
-        {0x01,0x01,0x02,0x03},
-        {0x03,0x01,0x01,0x02}
-    };
-
     public static void main(String[] args) throws Exception {
         roundConstants.put(4, "00000001000000000000000000000000");//Round constant to be used at iteration 4 in key expansion
         roundConstants.put(8, "00000010000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
@@ -65,16 +59,16 @@ public class App {
         roundConstants.put(36, "00011011000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         roundConstants.put(40, "00110110000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         Scanner input = new Scanner(System.in);
-        mixColumns("d4bf5d30bf6E65205d696E653054776F");
+        mixColumns("d4bf5d30bf6e65205d696e653054776f");
         System.out.println("Type text in hex");
         String text = input.nextLine();
         System.out.println("Type key in hex");
         String key  = input.nextLine();
+        key = hexToBinary(key);
         roundkeys[0] = key;//Key is first round key
         String [] words = keyToWords(key);// Dividing key into 4 byte words
         for(int i=4;i<44;i++){// Start from 4 because we already have 4 words 0,1,2,3
             String temp = words[i-1];
-            System.out.println("Temp "+temp+" "+i);
             if(i%4==0){
                 temp = rotateWord(temp);
                 temp = substituteWord(temp);
@@ -129,12 +123,6 @@ public class App {
             }
 
         }
-        for(int[]column:stateMatrix){
-            System.out.println();
-            for(int hex:column){
-               System.out.print(hex+" ");
-            }
-        }
 
         return stateMatrix;
     }
@@ -151,7 +139,6 @@ public class App {
         stateMatrix[1][column] = secondElement;
         stateMatrix[2][column] = thirdElement;
         stateMatrix[3][column] = fourthElement;
-        System.out.println((firstElement)+"\n"+(secondElement)+"\n"+(thirdElement)+"\n"+(fourthElement));
         return stateMatrix;
         
     }
@@ -272,6 +259,10 @@ public class App {
         String hexa = Integer.toHexString(temp);
         return hexa;
     }
+    private static String hexToBinary(String hex){
+        String binary = String.format("%128s", new BigInteger(hex, 16).toString(2)).replace(" ", "0"); //padding zeros to the left to make sure it is 128-bit
+        return binary;
+    }
 
     private static String shiftRow(String text){
         char[] stateMatrix = text.toCharArray(); //Converting string to char array to easily manipulate.
@@ -314,7 +305,6 @@ public class App {
     }
     private static String substituteWord(String word){
         String substitutedWord = "";
-        //System.out.println(word);
         for(int i=0;i<4;i++){
             String strRow = word.substring(i*8,i*8+4);//4 bits , 1 hexa character or 1 nibble that represent the row as a string(in binary)
             int row = Integer.parseInt(strRow,2);//Integer representation of strRow

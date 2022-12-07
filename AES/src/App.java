@@ -48,6 +48,7 @@ public class App {
         {0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16}
     };
     public static void main(String[] args) throws Exception {
+        System.out.println(mixColumns("63EB9FA02F9392C0AFC7AB30A220CB2B") );
         roundConstants.put(4, "00000001000000000000000000000000");//Round constant to be used at iteration 4 in key expansion
         roundConstants.put(8, "00000010000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         roundConstants.put(12, "00000100000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
@@ -130,10 +131,11 @@ public class App {
         for(int i=0;i<4;i++){
             stateMatrix = columnMultiplication(i,stateMatrix);//Update each column after performing neccessary calculations
         }
-        for(int[]column:stateMatrix){
-            for(int hex:column){
-                String result = String.format("%2s", Integer.toHexString(hex)).replace(" ", "0");
+        for(int i=0;i<stateMatrix.length;i++){
+            for(int j=0;j<stateMatrix[i].length;j++){
+                String result = String.format("%2s", Integer.toHexString(stateMatrix[j][i])).replace(" ", "0");
                 stringStateMatrix = stringStateMatrix.concat(result);
+
             }
         }
         System.out.println(stringStateMatrix);
@@ -287,11 +289,10 @@ public class App {
     private static String shiftRow(String text){
         char[] stateMatrix = text.toCharArray(); //Converting string to char array to easily manipulate.
         String newStateMatrix[] = {
-                stateMatrix[0]+"",stateMatrix[1]+"",stateMatrix[2]+"",stateMatrix[3]+"",stateMatrix[4]+"",stateMatrix[5]+"",stateMatrix[6]+"",stateMatrix[7]+"",
-                stateMatrix[10]+"",stateMatrix[11]+"",stateMatrix[12]+"",stateMatrix[13]+"",stateMatrix[14]+"",stateMatrix[15]+"",stateMatrix[8]+"",stateMatrix[9]+"",
-                stateMatrix[20]+"",stateMatrix[21]+"",stateMatrix[22]+"",stateMatrix[23]+"",stateMatrix[16]+"",stateMatrix[17]+"",stateMatrix[18]+"",stateMatrix[19]+"",
-                stateMatrix[30]+"",stateMatrix[31]+"",stateMatrix[24]+"",stateMatrix[25]+"",stateMatrix[26]+"",stateMatrix[27]+"",stateMatrix[28]+"",stateMatrix[29]+""
-        };
+                stateMatrix[0]+"",stateMatrix[1]+"",stateMatrix[10]+"",stateMatrix[11]+"",stateMatrix[20]+"",stateMatrix[21]+"",stateMatrix[30]+"",stateMatrix[31]+"",
+                stateMatrix[8]+"",stateMatrix[9]+"",stateMatrix[18]+"",stateMatrix[19]+"",stateMatrix[28]+"",stateMatrix[29]+"",stateMatrix[6]+"",stateMatrix[7]+"",
+                stateMatrix[16]+"",stateMatrix[17]+"",stateMatrix[26]+"",stateMatrix[27]+"",stateMatrix[4]+"",stateMatrix[5]+"",stateMatrix[14]+"",stateMatrix[15]+"",
+                stateMatrix[24]+"",stateMatrix[25]+"",stateMatrix[2]+"",stateMatrix[3]+"",stateMatrix[12]+"",stateMatrix[13]+"",stateMatrix[22]+"",stateMatrix[23]+""};
 
         String res = String.join("", newStateMatrix);
         return res;

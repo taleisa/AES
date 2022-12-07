@@ -19,8 +19,8 @@ public class App {
             {"e7","c8","37","6d","8d","d5","4e","a9","6c","56","f4","ea","65","7a","ae","08"},
             {"ba","78","25","2e","1c","a6","b4","c6","e8","dd","74","1f","4b","bd","8b","8a"},
             {"70","3e","b5","66","48","03","f6","0e","61","35","57","b9","86","c1","1d","9e"},
-            {"63","7c","77","7b","f2","6b","6f","c5","30","01","67","2b","fe","d7","ab","76"},
-            {"63","7c","77","7b","f2","6b","6f","c5","30","01","67","2b","fe","d7","ab","76"}
+            {"e1","f8","98","11","69","d9","8e","94","9b","1e","87","e9","ce","55","28","df"},
+            {"8c","a1","89","0d","bf","e6","42","68","41","99","2d","0f","b0","54","bb","16"}
     };
 
     static int dec; //Used in hexToDec()
@@ -48,7 +48,6 @@ public class App {
         {0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16}
     };
     public static void main(String[] args) throws Exception {
-        System.out.println(mixColumns("63EB9FA02F9392C0AFC7AB30A220CB2B") );
         roundConstants.put(4, "00000001000000000000000000000000");//Round constant to be used at iteration 4 in key expansion
         roundConstants.put(8, "00000010000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         roundConstants.put(12, "00000100000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
@@ -62,8 +61,16 @@ public class App {
         Scanner input = new Scanner(System.in);
         System.out.println("Type text (In Hex):");
         String text = input.nextLine();
+        while(text.length()!=32){
+            System.out.println("Text length incorrect, retype text ");
+            text  = input.nextLine();
+        }
         System.out.println("Type key (In Hex):");
         String key  = input.nextLine();
+        while(key.length()!=32){
+            System.out.println("Key length incorrect, retype key ");
+            key  = input.nextLine();
+        }
         key = hexToBinary(key);
         roundKeysInBinary[0] = key;//Key is first round key
         String [] words = keyToWords(key);// Dividing key into 4 byte words
@@ -108,18 +115,24 @@ public class App {
 
         for (int i=1; i<=10; i++){ //10 Rounds
             System.out.println("\n---------------------------------------------- Round "+i+" ----------------------------------------------");
+            System.out.println(addRoundKeyOutput);
             String subBytesOutput = subBytes(addRoundKeyOutput);
             System.out.println("Substitution Bytes - Round "+i+" \n"+addRoundKeyOutput+" After Substitution = "+subBytesOutput);
 
             String shiftRowsOutput = shiftRow(subBytesOutput);
             System.out.println("\nShift Row - Round "+i+" \n"+subBytesOutput+" After Shifting = "+shiftRowsOutput);
+            if(i!=10){//Last round dont mix columns
+            String mixColsOutput = mixColumns(shiftRowsOutput);
+            System.out.println("\nMix Column - Round "+i+" \n"+shiftRowsOutput+" Multiplied by fixed matrix = "+mixColsOutput);
+            addRoundKeyOutput = addRoundKey(mixColsOutput,roundKeysInHex[i]);
+            System.out.println("\nAdd Round Key - Round "+i+" \n"+mixColsOutput+" XOR "+roundKeysInHex[i]+" = "+addRoundKeyOutput);
+        }
 
-            //String mixColsOutput = mixColumns(shiftRowsOutput);
-            //System.out.println("\nMix Column - Round "+i+" \n"+shiftRowsOutput+" Multiplied by fixed matrix = "+mixColsOutput);
-
-            //addRoundKeyOutput = addRoundKey(mixColsOutput,roundKeysInHex[i]);
-            //System.out.println("\nAdd Round Key - Round "+i+" \n"+mixColsOutput+" XOR "+roundKeysInHex[i]+" = "+addRoundKeyOutput);
+            
+            
             if (i==10){
+                addRoundKeyOutput = addRoundKey(shiftRowsOutput,roundKeysInHex[i]);
+                System.out.println("\nAdd Round Key - Round "+i+" \n"+shiftRowsOutput+" XOR "+roundKeysInHex[i]+" = "+addRoundKeyOutput);
                 System.out.println("\nCiphertext : "+addRoundKeyOutput);
             }
         }
@@ -144,16 +157,18 @@ public class App {
 
     //Method that will recieve string of hexa and return 4x4 matrix of hexadecimal
     private static int[][] populateStateMatrix(String text){
+        //63EB9FA02F9392C0AFC7AB30A220CB2B
         int[][] stateMatrix = new int[4][4];
+        
         for(int i=0;i<text.length();i+=2){
             if(i<8){
-                stateMatrix[0][i/2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
+                stateMatrix[i/2][0]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
             }else if(i<16){
-                stateMatrix[1][(i-8)/2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
+                stateMatrix[(i-8)/2][1]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
             }else if(i<24){
-                stateMatrix[2][(i-16)/2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
+                stateMatrix[(i-16)/2][2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
             }else if(i<32){
-                stateMatrix[3][(i-24)/2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
+                stateMatrix[(i-24)/2][3]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
             }
         }
         return stateMatrix;

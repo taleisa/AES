@@ -1,9 +1,7 @@
 import java.util.Scanner;
 import java.math.BigInteger;
-import java.net.SocketTimeoutException;
 import java.util.BitSet;
 import java.util.HashMap;
-import java.util.Scanner;
 
 public class App {
     static String[][] sBox = {
@@ -21,14 +19,16 @@ public class App {
             {"e7","c8","37","6d","8d","d5","4e","a9","6c","56","f4","ea","65","7a","ae","08"},
             {"ba","78","25","2e","1c","a6","b4","c6","e8","dd","74","1f","4b","bd","8b","8a"},
             {"70","3e","b5","66","48","03","f6","0e","61","35","57","b9","86","c1","1d","9e"},
-            {"63","7c","77","7b","f2","6b","6f","c5","30","01","67","2b","fe","d7","ab","76"},
-            {"63","7c","77","7b","f2","6b","6f","c5","30","01","67","2b","fe","d7","ab","76"}
+            {"e1","f8","98","11","69","d9","8e","94","9b","1e","87","e9","ce","55","28","df"},
+            {"8c","a1","89","0d","bf","e6","42","68","41","99","2d","0f","b0","54","bb","16"}
     };
 
     static int dec; //Used in hexToDec()
     
     static HashMap<Integer,String> roundConstants = new HashMap<>();//Round constants to be used in key expansion
-    static String[] roundkeys = new String[11];
+    //static String[] roundkeys = new String[11];
+    static String[] roundKeysInBinary = new String[11];
+    static String[] roundKeysInHex = new String[11];
     static int[][] box = {
         {0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76},
         {0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0},
@@ -59,13 +59,20 @@ public class App {
         roundConstants.put(36, "00011011000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         roundConstants.put(40, "00110110000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         Scanner input = new Scanner(System.in);
-        mixColumns("d4bf5d30bf6e65205d696e653054776f");
-        System.out.println("Type text in hex");
+        System.out.println("Type text (In Hex):");
         String text = input.nextLine();
-        System.out.println("Type key in hex");
+        while(text.length()!=32){
+            System.out.println("Text length incorrect, retype text ");
+            text  = input.nextLine();
+        }
+        System.out.println("Type key (In Hex):");
         String key  = input.nextLine();
+        while(key.length()!=32){
+            System.out.println("Key length incorrect, retype key ");
+            key  = input.nextLine();
+        }
         key = hexToBinary(key);
-        roundkeys[0] = key;//Key is first round key
+        roundKeysInBinary[0] = key;//Key is first round key
         String [] words = keyToWords(key);// Dividing key into 4 byte words
         for(int i=4;i<44;i++){// Start from 4 because we already have 4 words 0,1,2,3
             String temp = words[i-1];
@@ -87,43 +94,83 @@ public class App {
             temp = temp.replace("{", "");
             temp = temp.replace("}", "");
             words[i] = temp;
-            if(roundkeys[i/4]==null)roundkeys[i/4]="";
-            roundkeys[i/4] = roundkeys[i/4].concat(temp);
-
+            if(roundKeysInBinary[i/4]==null)roundKeysInBinary[i/4]="";
+            roundKeysInBinary[i/4] = roundKeysInBinary[i/4].concat(temp);
         }
-        for(int i=0;i<roundkeys.length;i++){
-            System.out.println("Key "+i+" "+roundkeys[i]);
+        //Converting round keys from binary to hexa
+        for (int i=0; i<roundKeysInBinary.length; i++){
+            StringBuffer tempp = new StringBuffer(110);
+            for (int j=0; j<roundKeysInBinary[i].length(); j+=4){
+                tempp.append(binaryToHex(roundKeysInBinary[i].substring(j,j+4))); //converting every 4 bits into Hex.
+            }
+            roundKeysInHex[i] = tempp.toString();
+        }
+        System.out.println();
+        for(int i=0;i<roundKeysInHex.length;i++){
+            System.out.println("Round Key "+i+": "+roundKeysInHex[i]);
+        }
+
+        String addRoundKeyOutput = addRoundKey(text,roundKeysInHex[0]); //Calling add round key
+        System.out.println("\nAdd Round Key - Round 0 \n"+text+" XOR "+roundKeysInHex[0]+" = "+addRoundKeyOutput);
+
+        for (int i=1; i<=10; i++){ //10 Rounds
+            System.out.println("\n---------------------------------------------- Round "+i+" ----------------------------------------------");
+            System.out.println(addRoundKeyOutput);
+            String subBytesOutput = subBytes(addRoundKeyOutput);
+            System.out.println("Substitution Bytes - Round "+i+" \n"+addRoundKeyOutput+" After Substitution = "+subBytesOutput);
+
+            String shiftRowsOutput = shiftRow(subBytesOutput);
+            System.out.println("\nShift Row - Round "+i+" \n"+subBytesOutput+" After Shifting = "+shiftRowsOutput);
+            if(i!=10){//Last round dont mix columns
+            String mixColsOutput = mixColumns(shiftRowsOutput);
+            System.out.println("\nMix Column - Round "+i+" \n"+shiftRowsOutput+" Multiplied by fixed matrix = "+mixColsOutput);
+            addRoundKeyOutput = addRoundKey(mixColsOutput,roundKeysInHex[i]);
+            System.out.println("\nAdd Round Key - Round "+i+" \n"+mixColsOutput+" XOR "+roundKeysInHex[i]+" = "+addRoundKeyOutput);
+        }
+
+            
+            
+            if (i==10){
+                addRoundKeyOutput = addRoundKey(shiftRowsOutput,roundKeysInHex[i]);
+                System.out.println("\nAdd Round Key - Round "+i+" \n"+shiftRowsOutput+" XOR "+roundKeysInHex[i]+" = "+addRoundKeyOutput);
+                System.out.println("\nCiphertext : "+addRoundKeyOutput);
+            }
         }
     }
+
     private static String mixColumns(String text) throws Exception{
         int[][] stateMatrix = populateStateMatrix(text);//State matrix that contains message in hexadecimal
         String stringStateMatrix = "";
         for(int i=0;i<4;i++){
             stateMatrix = columnMultiplication(i,stateMatrix);//Update each column after performing neccessary calculations
         }
-        for(int[]column:stateMatrix){
-            for(int hex:column){
-                stringStateMatrix = stringStateMatrix.concat(hex+"");
+        for(int i=0;i<stateMatrix.length;i++){
+            for(int j=0;j<stateMatrix[i].length;j++){
+                String result = String.format("%2s", Integer.toHexString(stateMatrix[j][i])).replace(" ", "0");
+                stringStateMatrix = stringStateMatrix.concat(result);
+
             }
         }
+        System.out.println(stringStateMatrix);
         return stringStateMatrix;
     }
+
     //Method that will recieve string of hexa and return 4x4 matrix of hexadecimal
     private static int[][] populateStateMatrix(String text){
+        //63EB9FA02F9392C0AFC7AB30A220CB2B
         int[][] stateMatrix = new int[4][4];
+        
         for(int i=0;i<text.length();i+=2){
             if(i<8){
-                stateMatrix[0][i/2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
+                stateMatrix[i/2][0]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
             }else if(i<16){
-                stateMatrix[1][(i-8)/2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
+                stateMatrix[(i-8)/2][1]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
             }else if(i<24){
-                stateMatrix[2][(i-16)/2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
+                stateMatrix[(i-16)/2][2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
             }else if(i<32){
-                stateMatrix[3][(i-24)/2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
+                stateMatrix[(i-24)/2][3]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
             }
-
         }
-
         return stateMatrix;
     }
     private static int[][] columnMultiplication(int column,int[][] stateMatrix) throws Exception{
@@ -176,8 +223,6 @@ public class App {
         return Integer.parseInt(bitString,2);
 
     }
-    
-
 
     private static String subBytes(String text){
         char[] stateMatrix = text.toCharArray(); //Converting string to char array to easily manipulate.
@@ -216,14 +261,6 @@ public class App {
             dec = Character.getNumericValue(fourBits); //if the char is a number then just convert it to int
         }
         return dec;
-    }
-
-    private static String arrayToString(char[] array) {// Method that converts char array to string
-        String newString = "";
-        for (char bit : array) {// Iterating through the char array
-            newString = newString.concat(bit + "");
-        }
-        return newString;
     }
 
     private static String addRoundKey(String text, String key){
@@ -267,11 +304,10 @@ public class App {
     private static String shiftRow(String text){
         char[] stateMatrix = text.toCharArray(); //Converting string to char array to easily manipulate.
         String newStateMatrix[] = {
-                stateMatrix[0]+"",stateMatrix[1]+"",stateMatrix[2]+"",stateMatrix[3]+"",stateMatrix[4]+"",stateMatrix[5]+"",stateMatrix[6]+"",stateMatrix[7]+"",
-                stateMatrix[10]+"",stateMatrix[11]+"",stateMatrix[12]+"",stateMatrix[13]+"",stateMatrix[14]+"",stateMatrix[15]+"",stateMatrix[8]+"",stateMatrix[9]+"",
-                stateMatrix[20]+"",stateMatrix[21]+"",stateMatrix[22]+"",stateMatrix[23]+"",stateMatrix[16]+"",stateMatrix[17]+"",stateMatrix[18]+"",stateMatrix[19]+"",
-                stateMatrix[30]+"",stateMatrix[31]+"",stateMatrix[24]+"",stateMatrix[25]+"",stateMatrix[26]+"",stateMatrix[27]+"",stateMatrix[28]+"",stateMatrix[29]+""
-        };
+                stateMatrix[0]+"",stateMatrix[1]+"",stateMatrix[10]+"",stateMatrix[11]+"",stateMatrix[20]+"",stateMatrix[21]+"",stateMatrix[30]+"",stateMatrix[31]+"",
+                stateMatrix[8]+"",stateMatrix[9]+"",stateMatrix[18]+"",stateMatrix[19]+"",stateMatrix[28]+"",stateMatrix[29]+"",stateMatrix[6]+"",stateMatrix[7]+"",
+                stateMatrix[16]+"",stateMatrix[17]+"",stateMatrix[26]+"",stateMatrix[27]+"",stateMatrix[4]+"",stateMatrix[5]+"",stateMatrix[14]+"",stateMatrix[15]+"",
+                stateMatrix[24]+"",stateMatrix[25]+"",stateMatrix[2]+"",stateMatrix[3]+"",stateMatrix[12]+"",stateMatrix[13]+"",stateMatrix[22]+"",stateMatrix[23]+""};
 
         String res = String.join("", newStateMatrix);
         return res;

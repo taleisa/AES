@@ -46,9 +46,15 @@ public class App {
         {0xe1, 0xf8, 0x98, 0x11, 0x69, 0xd9, 0x8e, 0x94, 0x9b, 0x1e, 0x87, 0xe9, 0xce, 0x55, 0x28, 0xdf},
         {0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16}
     };
+    static int[][] mixColumnsFixedMatrix = {
+        {0x02,0x03,0x01,0x01},
+        {0x01,0x02,0x03,0x01},
+        {0x01,0x01,0x02,0x03},
+        {0x03,0x01,0x01,0x02}
+    };
 
     public static void main(String[] args) throws Exception {
-    roundConstants.put(4, "00000001000000000000000000000000");//Round constant to be used at iteration 4 in key expansion
+        roundConstants.put(4, "00000001000000000000000000000000");//Round constant to be used at iteration 4 in key expansion
         roundConstants.put(8, "00000010000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         roundConstants.put(12, "00000100000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         roundConstants.put(16, "00001000000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
@@ -59,14 +65,11 @@ public class App {
         roundConstants.put(36, "00011011000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         roundConstants.put(40, "00110110000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         Scanner input = new Scanner(System.in);
+        mixColumns("d4bf5d30bf6E65205d696E653054776F");
         System.out.println("Type text in hex");
         String text = input.nextLine();
         System.out.println("Type key in hex");
         String key  = input.nextLine();
-        while(key.length()!=128){
-            System.out.println("Key not 128 bits long, please retype key");
-            key = input.nextLine();
-        }
         roundkeys[0] = key;//Key is first round key
         String [] words = keyToWords(key);// Dividing key into 4 byte words
         for(int i=4;i<44;i++){// Start from 4 because we already have 4 words 0,1,2,3
@@ -89,8 +92,6 @@ public class App {
             //Removing characters at beggining and end of string that will cause problems
             temp = temp.replace("{", "");
             temp = temp.replace("}", "");
-            System.out.println("Saving "+ temp);
-            System.out.println("----------------------------------------------"+i/4);
             words[i] = temp;
             if(roundkeys[i/4]==null)roundkeys[i/4]="";
             roundkeys[i/4] = roundkeys[i/4].concat(temp);
@@ -99,11 +100,97 @@ public class App {
         for(int i=0;i<roundkeys.length;i++){
             System.out.println("Key "+i+" "+roundkeys[i]);
         }
-
-        //System.out.println(subBytes(text));
-        //System.out.println(addRoundKey(text,key));
-        //System.out.println(shiftRow(text));
     }
+    private static String mixColumns(String text) throws Exception{
+        int[][] stateMatrix = populateStateMatrix(text);//State matrix that contains message in hexadecimal
+        String stringStateMatrix = "";
+        for(int i=0;i<4;i++){
+            stateMatrix = columnMultiplication(i,stateMatrix);//Update each column after performing neccessary calculations
+        }
+        for(int[]column:stateMatrix){
+            for(int hex:column){
+                stringStateMatrix = stringStateMatrix.concat(hex+"");
+            }
+        }
+        return stringStateMatrix;
+    }
+    //Method that will recieve string of hexa and return 4x4 matrix of hexadecimal
+    private static int[][] populateStateMatrix(String text){
+        int[][] stateMatrix = new int[4][4];
+        for(int i=0;i<text.length();i+=2){
+            if(i<8){
+                stateMatrix[0][i/2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
+            }else if(i<16){
+                stateMatrix[1][(i-8)/2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
+            }else if(i<24){
+                stateMatrix[2][(i-16)/2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
+            }else if(i<32){
+                stateMatrix[3][(i-24)/2]=Integer.parseInt("0"+text.charAt(i)+text.charAt(i+1), 16);
+            }
+
+        }
+        for(int[]column:stateMatrix){
+            System.out.println();
+            for(int hex:column){
+               System.out.print(hex+" ");
+            }
+        }
+
+        return stateMatrix;
+    }
+    private static int[][] columnMultiplication(int column,int[][] stateMatrix) throws Exception{
+        //First hex in updated column
+        int firstElement = multiply(0x02, stateMatrix[0][column])^multiply(0x03, stateMatrix[1][column])^multiply(0x01, stateMatrix[2][column])^multiply(0x01, stateMatrix[3][column]);
+        //Second hex in updated column
+        int secondElement = multiply(0x01, stateMatrix[0][column])^multiply(0x02, stateMatrix[1][column])^multiply(0x03, stateMatrix[2][column])^multiply(0x01, stateMatrix[3][column]);
+        //Third hex in updated column
+        int thirdElement = multiply(0x01, stateMatrix[0][column])^multiply(0x01, stateMatrix[1][column])^multiply(0x02, stateMatrix[2][column])^multiply(0x03, stateMatrix[3][column]);
+        //Fourth hex in updated column
+        int fourthElement = multiply(0x03, stateMatrix[0][column])^multiply(0x01, stateMatrix[1][column])^multiply(0x01, stateMatrix[2][column])^multiply(0x02, stateMatrix[3][column]);
+        stateMatrix[0][column] = firstElement;
+        stateMatrix[1][column] = secondElement;
+        stateMatrix[2][column] = thirdElement;
+        stateMatrix[3][column] = fourthElement;
+        System.out.println((firstElement)+"\n"+(secondElement)+"\n"+(thirdElement)+"\n"+(fourthElement));
+        return stateMatrix;
+        
+    }
+    private static int multiply(int fixedMatrix,int stateMatrix) throws Exception{
+        if(fixedMatrix==0x01)return stateMatrix;//When multiplying with one we do nothing
+        else if(fixedMatrix==0x02){
+            char mostSignificantBit = String.format("%8s", Integer.toBinaryString(stateMatrix)).replace(' ', '0').charAt(0);
+            stateMatrix = leftShift(stateMatrix);
+            if(mostSignificantBit=='1'){
+                stateMatrix = (stateMatrix^0x1B);
+            }else if(mostSignificantBit!='0')throw new Exception("Most sig bit not 0 or 1");
+
+        }else if(fixedMatrix==0x03){
+            char mostSignificantBit = String.format("%8s", Integer.toBinaryString(stateMatrix)).replace(' ', '0').charAt(0);
+            int leftstateMatrix = leftShift(stateMatrix);
+            if(mostSignificantBit=='1'){
+                leftstateMatrix = (leftstateMatrix^0x1b);
+            }else if(mostSignificantBit!='0')throw new Exception("Most sig bit not 0 or 1");
+            stateMatrix = (stateMatrix^leftstateMatrix);
+        }
+        return stateMatrix;
+
+    }
+    private static int leftShift(int hex){
+        char[] bits = String.format("%8s", Integer.toBinaryString(hex)).replace(' ', '0').toCharArray();
+        for(int i=0;i<bits.length;i++){
+            if(i==bits.length-1){//Last bit is zero
+                bits[i] = '0';
+                break;
+            }
+            bits[i] = bits[i+1];//Left shift each bit by 1
+        }
+        
+        String bitString = new String(bits);
+        return Integer.parseInt(bitString,2);
+
+    }
+    
+
 
     private static String subBytes(String text){
         char[] stateMatrix = text.toCharArray(); //Converting string to char array to easily manipulate.

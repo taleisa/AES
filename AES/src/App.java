@@ -132,7 +132,8 @@ public class App {
         }
         for(int[]column:stateMatrix){
             for(int hex:column){
-                stringStateMatrix = stringStateMatrix.concat(Integer.toHexString(hex));
+                String result = String.format("%2s", Integer.toHexString(hex)).replace(" ", "0");
+                stringStateMatrix = stringStateMatrix.concat(result);
             }
         }
         System.out.println(stringStateMatrix);

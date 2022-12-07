@@ -59,7 +59,6 @@ public class App {
         roundConstants.put(36, "00011011000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         roundConstants.put(40, "00110110000000000000000000000000");//Round constant to be used at iteration 8 in key expansion
         Scanner input = new Scanner(System.in);
-        mixColumns("d4bf5d30bf6e65205d696e653054776f");
         System.out.println("Type text (In Hex):");
         String text = input.nextLine();
         System.out.println("Type key (In Hex):");
@@ -133,7 +132,7 @@ public class App {
         }
         for(int[]column:stateMatrix){
             for(int hex:column){
-                stringStateMatrix = stringStateMatrix.concat(hex+"");
+                stringStateMatrix = stringStateMatrix.concat(Integer.toHexString(hex));
             }
         }
         System.out.println(stringStateMatrix);
